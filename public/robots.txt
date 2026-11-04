@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://hawksbi.com.br/sitemap.xml
+Sitemap: https://hawksbi.com.br/sitemap-blog.xml

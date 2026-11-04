@@ -105,7 +105,7 @@ export function getPageMeta(path: string) {
   }
   if (article) {
     page.mainEntity = { '@id': `${url}#article` };
-    graph.push({ '@type': 'BlogPosting', '@id': `${url}#article`, headline: article.title, description, datePublished: article.date, dateModified: article.date, author: { '@type': 'Organization', name: 'Hawks BI', url: `${origin}/` }, publisher: { '@id': organizationId }, mainEntityOfPage: { '@id': `${url}#webpage` }, inLanguage: 'pt-BR', articleSection: products.find((item) => item.id === article.product)!.name });
+    graph.push({ '@type': 'BlogPosting', '@id': `${url}#article`, headline: article.title, description, ...(article.image ? {image: `${origin}${article.image.src}`} : {}), datePublished: article.date, dateModified: article.date, author: { '@type': 'Organization', name: 'Hawks BI', url: `${origin}/` }, publisher: { '@id': organizationId }, mainEntityOfPage: { '@id': `${url}#webpage` }, inLanguage: 'pt-BR', articleSection: products.find((item) => item.id === article.product)!.name });
   }
   return { title, description, url, exists, type: article ? 'article' : 'website', graph: { '@context': 'https://schema.org', '@graph': graph } };
 }

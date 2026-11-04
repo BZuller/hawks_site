@@ -39,3 +39,8 @@ await writeFile(new URL("blog/feed.json", dist), JSON.stringify(publicBlogFeed()
 for (const product of blogProductIds) {
   await writeFile(new URL(`blog/feeds/${product}.json`, dist), JSON.stringify(publicBlogFeed(product), null, 2) + "\n");
 }
+
+// Feed is the canonical list of published posts; drafts never enter this sitemap.
+const blogEntries = publicBlogFeed().articles;
+const blogSitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${blogEntries.map(a=>`<url><loc>${a.url}</loc><lastmod>${a.date}</lastmod></url>`).join('')}</urlset>\n`;
+await writeFile(new URL('sitemap-blog.xml',dist),blogSitemap);

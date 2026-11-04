@@ -63,6 +63,7 @@ export function ArticlePage({ article }: { article: Article }) {
         <div className="article-byline"><span>Por <a href="/">Hawks BI</a></span><time dateTime={article.date}>{formatDate(article.date)}</time><a href={productPath(product.id)}>{product.name}<Arrow /></a></div>
       </header>
       <div className="article-reading">
+        {article.image && <img className="article-cover" src={article.image.src} alt={article.image.alt} width={article.image.width} height={article.image.height} decoding="async" />}
         <aside className="article-release-note" aria-label="Disponibilidade da atualização"><strong>{article.status}</strong><p>{article.note}</p></aside>
         {article.sections.map(section => <section key={section.title}>
           <h2>{section.title}</h2>

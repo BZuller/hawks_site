@@ -894,3 +894,5 @@ html { scrollbar-color: #6c6358 var(--ink); }
   .mobile-service-gateway a svg { flex-shrink: 0; }
   .mobile-service-gateway__products { display: flex; align-items: center; min-height: 44px; font-size: 11px; color: #655e53; margin-top: 7px; }
 }
+
+.article-cover { display:block; width:100%; height:auto; margin:0 0 36px; border-radius:12px; }

@@ -13,3 +13,5 @@ Usar os PNGs oficiais em `public/assets/brand/`: orange-hawks-bi-transparent.png
 ## Interação e anexos
 
 Respeitar movimento reduzido, foco visível, diálogo de contato, teclado e composição mobile. As oito skills GSAP em `.agents/skills/` são extensões contextuais de animação; consultar catálogo e Impeccable. `design/audits/` registra avaliações, não uma segunda autoridade visual.
+
+Personagens INF-539: usar a prancha original aprovada em `public/assets/characters/elenco-visto.png`, proporção 1536×1024, com texto alternativo. Origem: coleção do aplicativo Visto (INF-487).
