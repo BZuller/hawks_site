@@ -1,4 +1,5 @@
 import { articles, articlePath, products, productPath } from './editorial';
+import { businessIdentity } from './businessIdentity';
 import { services, servicePath } from './services';
 
 export const origin = 'https://hawksbi.com.br';
@@ -9,6 +10,7 @@ const websiteId = `${origin}/#website`;
 const area = { '@type': 'City', name: 'Gravataí', containedInPlace: { '@type': 'State', name: 'Rio Grande do Sul' } };
 const organization = {
   '@type': ['Organization', 'LocalBusiness'], '@id': organizationId, name: 'Hawks BI', url: `${origin}/`,
+  legalName: businessIdentity.legalName, taxID: businessIdentity.taxId,
   logo: `${origin}/assets/brand/orange-hawks-bi-transparent.png`,
   image: `${origin}/assets/brand/orange-hawks-bi-transparent.png`,
   email: 'comercial@hawksbi.com.br', telephone: '+5551995614866',
