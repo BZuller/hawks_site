@@ -61,6 +61,7 @@ export function validateSchema(html, path) {
     { id: 'visto', name: 'Visto', status: 'Em operação' },
     { id: 'agendo', name: 'Agendo', status: 'Em operação' },
     { id: 'conexo', name: 'Conexo', status: 'Em validação' },
+    { id: 'atolocal', name: 'Ato Local by Hawks BI', status: 'Em operação' },
   ];
   const product = catalog.find((item) => path === `/produtos/${item.id}/`);
   if (product) {

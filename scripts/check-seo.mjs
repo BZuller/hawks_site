@@ -104,4 +104,4 @@ for (const [path, page] of pages) {
   }
 }
 console.log('SEO local: base, serviços, contato e referências JSON-LD consistentes.');
-console.log('Schema: endereço completo, telefone, horários, três softwares, catálogo, breadcrumbs e conteúdo visível consistentes.');
+console.log('Schema: endereço completo, telefone, horários, produtos, catálogo, breadcrumbs e conteúdo visível consistentes.');

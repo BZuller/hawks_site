@@ -1,6 +1,5 @@
 import { agendoWhatsAppLaunch } from "./agendoWhatsAppLaunch";
 
-export type ProductId = "visto" | "agendo" | "conexo";
 export const products = [
   {
     id: "visto" as const, name: "Visto", cardTitle: "Acompanhe o trabalho. Confira o registro.", cardDescription: "Checklists, fotos e histórico para saber o que foi feito e o que precisa de atenção.", highlights: ["Rotinas", "Evidências", "Relatórios"], category: "Rotinas e controle operacional", status: "Em operação",
@@ -44,8 +43,25 @@ export const products = [
     audience: "Para operações que recebem conversas em diferentes canais e precisam organizar a continuidade do atendimento.",
     note: "O Conexo está em validação. Converse com a Hawks para conhecer o escopo atual e avaliar os canais necessários à sua operação.",
   },
+  {
+    id: "atolocal" as const, name: "Ato Local by Hawks BI", cardTitle: "Ato Local by Hawks BI",
+    cardDescription: "Boletim independente de Gravataí, operado pela Hawks BI. Acompanhe o Diário Oficial e as sessões da Câmara pelo WhatsApp.",
+    highlights: ["Diário Oficial", "Câmara", "WhatsApp"], category: "Informação local", status: "Em operação",
+    logo: "/assets/products/ato-local-wordmark.png", symbol: "", href: "https://atolocal.hawksbi.com.br/", action: "Acessar o Ato Local",
+    title: "Ato Local by Hawks BI",
+    description: "O Ato Local é um boletim independente de Gravataí, operado pela Hawks BI, com resumos do Diário Oficial e das sessões da Câmara pelo WhatsApp.",
+    intro: "O boletim reúne informações publicadas pela Prefeitura e pela Câmara de Gravataí. Os resumos dão contexto e indicam as fontes para quem quiser consultar os documentos originais.",
+    features: [
+      { title: "Diário Oficial", text: "Consulte resumos de atos publicados no Diário Oficial de Gravataí e acesse as fontes indicadas no boletim." },
+      { title: "Sessões da Câmara", text: "Acompanhe os assuntos discutidos nas sessões e consulte os materiais da Câmara." },
+      { title: "Consulta pelo WhatsApp", text: "Abra o menu do Ato Local para escolher o que deseja consultar." },
+    ],
+    audience: "Para moradores e quem acompanha as decisões da Prefeitura e da Câmara de Gravataí.",
+    note: "O Ato Local é um boletim independente da Hawks BI. As publicações oficiais permanecem disponíveis nos canais da Prefeitura e da Câmara.",
+  },
 ];
 export type Product = typeof products[number];
+export type ProductId = Product["id"];
 export type Article = {
   slug: string; product: ProductId; products?: ProductId[]; kind?: "news" | "patch-notes";
   editorialStatus?: "published" | "draft"; title: string; summary: string; date: string;
