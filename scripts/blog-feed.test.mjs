@@ -17,7 +17,7 @@ test('distributes a multi-product post to both product feeds', () => {
 });
 test('built filtered feeds exactly match their central public records', async () => {
  const central=JSON.parse(await readFile(new URL('../dist/blog/feed.json',import.meta.url),'utf8'));
- for(const product of ['visto','agendo','conexo']) {
+ for(const product of ['visto','agendo','conexo','atolocal']) {
   const filtered=JSON.parse(await readFile(new URL(`../dist/blog/feeds/${product}.json`,import.meta.url),'utf8'));
   assert.deepEqual(filtered.articles,central.articles.filter(item=>item.products.includes(product)));
   assert.ok(filtered.articles.every(item=>item.url.startsWith('https://hawksbi.com.br/blog/')));
