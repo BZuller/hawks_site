@@ -17,8 +17,10 @@ Run `npm run check:contact`, `npm run build`, `npm run check:seo` and a Cloudfla
 
 Current configuration (2026-10-09): Resend selected and authorized by the owner. The key has Sending access restricted to `contato.hawksbi.com.br`. All four production variables are stored in Cloudflare Pages project `hawks-bi`; the API key and Turnstile secret are not in source control. The managed Turnstile widget allows `hawksbi.com.br`. Tracking and receiving through Resend are disabled. Deployment and real form delivery must be confirmed separately; successful automated tests do not demonstrate inbox receipt.
 
-## Visto demonstration requests
+## Visto demonstration booking
 
-`/api/visto-demo` uses the same four bindings and the same commercial recipient. CORS permits only `https://visto.hawksbi.com.br`. The widget must return the Visto hostname and action `visto-demo`. The email contains the visitor's name, email and Brazilian WhatsApp number, with the subject “Visto | Pedido de demonstração”. Its idempotency namespace is separate from the institutional form.
+`/api/visto-demo` uses the same four bindings and the same commercial recipient. It also requires the dedicated secret `VISTO_DEMO_API_TOKEN` shared with the Cockpit integration, stored separately on both servers. CORS permits only `https://visto.hawksbi.com.br`. The widget must return the Visto hostname and action `visto-demo`.
 
-Deploy the Hawks Pages route first and check GET and OPTIONS with the Visto origin. Confirm an authorized test submission before activating the landing's buttons. If reverting both sites, revert the landing first so its buttons can still reach a working destination.
+The route requests a 30-day range of available one-hour slots from the Cockpit and forwards the confirmed slot and qualified lead. The browser gets slot times and an opaque ID. Cockpit owns reservation, deduplication, availability, and the linked lead. A slot taken by another visitor returns a conflict. Preserve the submission ID and payload after an uncertain response. After a confirmed booking, the route schedules an idempotent notification to the commercial inbox. Delivery errors are logged without personal details and do not undo the Cockpit reservation.
+
+Deploy the Cockpit contract first (INF-568), provision the shared secret, then verify the Hawks route and the Visto preview with isolated data. Confirm the responsible field starts empty, the confirmed event lasts an hour, the lead is linked and the labeled test notice arrives before enabling the public flow. No configured slots means the modal reports unavailable availability. If reverting, restore the landing first.

@@ -31,72 +31,139 @@ test('provider failure never returns success or leaks details', async () => {
 test('network failure and missing receipt never return success', async () => { const r = await handleContact({ request: req(), env }, async () => { throw new Error('network'); }); assert.equal(r.status, 503); let calls = 0; const missing = await handleContact({ request: req(), env }, async () => ++calls === 1 ? challenge() : Response.json({})); assert.equal(missing.status, 502); });
 
 const vistoOrigin = 'https://visto.hawksbi.com.br';
-const demoFields = {
-  name: fields.name,
-  email: fields.email,
-  phone: '+5511999999999',
-  website: '',
-  submissionId: fields.submissionId,
-  token: fields.token,
+const cockpit = 'https://cockpit.hawksbi.com.br/api/integrations/visto/demo/v1';
+const vistoEnv = { ...env, VISTO_DEMO_API_TOKEN: 'synthetic-server-token' };
+const timeZone = 'America/Sao_Paulo';
+const slot = { id: 'opaque-slot', startsAt: '2030-11-20T14:00:00-03:00', endsAt: '2030-11-20T15:00:00-03:00' };
+const booking = { ...slot, id: 'booking-opaque', timeZone };
+const lead = {
+  firstName: 'Bruna', lastName: 'Teste', email: 'bruna@example.test', phone: '+5511999999999',
+  employeeCount: 12, biggestPain: 'Conferir as rotinas dos turnos.', businessName: 'Padaria de Teste',
 };
+const demoFields = { lead, slotId: slot.id, website: '', submissionId: fields.submissionId, token: fields.token };
 const demoRequest = (method, body, origin = vistoOrigin) => new Request('https://hawksbi.com.br/api/visto-demo', {
   method,
   headers: { origin, 'Content-Type': 'application/json' },
   body: body === undefined ? undefined : JSON.stringify(body),
 });
+const demoChallenge = (values = {}) => challenge({ hostname: 'visto.hawksbi.com.br', action: 'visto-demo', ...values });
 
-test('Visto permits browser requests only from its public origin', async () => {
+test('Visto permits browser requests only from its public origin and fails closed without config', async () => {
   for (const method of ['GET', 'OPTIONS', 'POST']) {
     for (const origin of ['https://hawksbi.com.br', 'https://app.visto.hawksbi.com.br', 'https://visto.hawksbi.com.br.evil.test']) {
-      const rejected = await handleVistoDemo({ request: demoRequest(method, undefined, origin), env }, never);
+      const rejected = await handleVistoDemo({ request: demoRequest(method, undefined, origin), env: vistoEnv }, never);
       assert.equal(rejected.status, 403);
       assert.equal(rejected.headers.has('Access-Control-Allow-Origin'), false);
     }
   }
-  const config = await handleVistoDemo({ request: demoRequest('GET'), env }, never);
-  assert.deepEqual(await config.json(), { siteKey: 'test-site' });
-  assert.equal(config.headers.get('Access-Control-Allow-Origin'), vistoOrigin);
-  const preflight = await handleVistoDemo({ request: demoRequest('OPTIONS'), env }, never);
+  const preflight = await handleVistoDemo({ request: demoRequest('OPTIONS'), env: vistoEnv }, never);
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get('Access-Control-Allow-Headers'), 'Content-Type');
-  const unavailable = await handleVistoDemo({ request: demoRequest('GET'), env: { TURNSTILE_SITE_KEY: 'test-site' } }, never);
-  assert.equal(unavailable.status, 503);
+  for (const config of [
+    { ...vistoEnv, VISTO_DEMO_API_TOKEN: undefined },
+    { ...vistoEnv, VISTO_DEMO_API_TOKEN: ' ' },
+    { ...vistoEnv, TURNSTILE_SECRET_KEY: undefined },
+  ]) {
+    const unavailable = await handleVistoDemo({ request: demoRequest('GET'), env: config }, never);
+    assert.equal(unavailable.status, 503);
+  }
 });
 
-test('Visto sends a separate demonstration email and preserves idempotency on retries', async () => {
+test('Visto exposes only future one-hour slots, with the Cockpit token kept server-side', async () => {
+  const response = await handleVistoDemo({ request: demoRequest('GET'), env: vistoEnv }, async (url, options) => {
+    const target = new URL(url);
+    assert.equal(target.origin + target.pathname, cockpit + '/availability');
+    const from = target.searchParams.get('from');
+    const to = target.searchParams.get('to');
+    assert.match(from, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(Date.parse(to) - Date.parse(from), 30 * 86400000);
+    assert.equal(options.headers.Authorization, 'Bearer synthetic-server-token');
+    assert.equal(options.redirect, 'error');
+    return Response.json({ timeZone, slots: [
+      { ...slot, ownerEmail: 'private@example.test' },
+      { id: 'old', startsAt: '2020-01-01T10:00:00-03:00', endsAt: '2020-01-01T11:00:00-03:00' },
+    ] });
+  });
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), vistoOrigin);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.deepEqual(await response.json(), { siteKey: 'test-site', timeZone, slots: [slot] });
+  const bad = await handleVistoDemo({ request: demoRequest('GET'), env: vistoEnv }, async () =>
+    Response.json({ timeZone, slots: [{ ...slot, endsAt: '2030-11-20T14:30:00-03:00' }] }));
+  assert.equal(bad.status, 502);
+});
+
+test('Visto sends qualification to Cockpit and notifies commercial after a confirmed booking', async () => {
   const calls = [];
+  const tasks = [];
   const deliver = async (url, options) => {
     calls.push({ url, ...options });
-    if (url.includes('siteverify')) return challenge({ hostname: 'visto.hawksbi.com.br', action: 'visto-demo' });
-    return Response.json({ id: 'visto-receipt' });
+    if (url.includes('siteverify')) return demoChallenge();
+    if (url === cockpit + '/bookings') return Response.json({ booking: { ...booking, owner: 'private' } });
+    return Response.json({ id: 'mail-receipt' });
   };
   for (const token of ['first-token', 'second-token']) {
-    const result = await handleVistoDemo({ request: demoRequest('POST', { ...demoFields, token }), env }, deliver);
-    assert.deepEqual(await result.json(), { ok: true });
-    assert.equal(result.headers.get('Access-Control-Allow-Origin'), vistoOrigin);
+    const result = await handleVistoDemo({
+      request: demoRequest('POST', { ...demoFields, token }),
+      env: vistoEnv,
+      waitUntil: (promise) => tasks.push(promise),
+    }, deliver);
+    assert.equal(result.status, 201);
+    assert.deepEqual(await result.json(), { booking });
   }
-  for (const delivery of [calls[1], calls[3]]) {
+  await Promise.all(tasks);
+  const reservations = calls.filter((call) => call.url === cockpit + '/bookings');
+  assert.equal(reservations.length, 2);
+  for (const reservation of reservations) {
+    assert.deepEqual(JSON.parse(reservation.body), {
+      slotId: slot.id, submissionId: demoFields.submissionId, lead: { ...lead, employeeCount: '12' },
+    });
+    assert.equal(reservation.headers.Authorization, 'Bearer synthetic-server-token');
+  }
+  const notices = calls.filter((call) => call.url === 'https://api.resend.com/emails');
+  assert.equal(notices.length, 2);
+  for (const delivery of notices) {
     const mail = JSON.parse(delivery.body);
     assert.deepEqual(mail.to, ['comercial@hawksbi.com.br']);
-    assert.equal(mail.reply_to, demoFields.email);
-    assert.equal(mail.subject, 'Visto | Pedido de demonstração');
-    assert.match(mail.text, /WhatsApp: \+5511999999999/);
-    assert.equal(delivery.headers['Idempotency-Key'], `visto-demo/${demoFields.submissionId}`);
+    assert.equal(mail.reply_to, lead.email);
+    assert.equal(mail.subject, 'Visto | Demonstração agendada');
+    assert.match(mail.text, /Negócio: Padaria de Teste/);
+    assert.equal(delivery.headers['Idempotency-Key'], `visto-booking/${demoFields.submissionId}`);
   }
 });
 
-test('Visto rejects malformed phones and tokens from the institutional form', async () => {
-  for (const phone of ['11999999999', '+5500999999999', '+5511999999999\n', undefined]) {
-    const result = await handleVistoDemo({ request: demoRequest('POST', { ...demoFields, phone }), env }, never);
+test('Visto rejects malformed qualification and tokens from the institutional form', async () => {
+  for (const partial of [{ lastName: ' ' }, { phone: '11999999999' }, { employeeCount: -1 }, { employeeCount: 2.5 },
+    { biggestPain: '\n ' }, { businessName: ' ' }, { firstName: 'Nome\nTeste' }, { firstName: 'a'.repeat(71) }, { lastName: 'a'.repeat(90) }]) {
+    const result = await handleVistoDemo({ request: demoRequest('POST', { ...demoFields, lead: { ...lead, ...partial } }), env: vistoEnv }, never);
     assert.equal(result.status, 400);
   }
-  for (const values of [{ hostname: 'hawksbi.com.br', action: 'visto-demo' }, { hostname: 'visto.hawksbi.com.br', action: 'contact' }]) {
+  for (const fields of [{ hostname: 'hawksbi.com.br' }, { action: 'contact' }]) {
     let calls = 0;
-    const result = await handleVistoDemo({ request: demoRequest('POST', demoFields), env }, async () => {
+    const result = await handleVistoDemo({ request: demoRequest('POST', demoFields), env: vistoEnv }, async () => {
       calls++;
-      return challenge(values);
+      return demoChallenge(fields);
     });
     assert.equal(result.status, 403);
     assert.equal(calls, 1);
+  }
+});
+
+test('Visto does not confirm or notify on contention or an uncertain Cockpit result', async () => {
+  for (const [upstream, status, code] of [
+    [() => Response.json({ error: { code: 'slot_unavailable' } }, { status: 409 }), 409, 'slot_unavailable'],
+    [() => Response.json({ error: { code: 'submission_conflict' } }, { status: 409 }), 409, 'submission_conflict'],
+    [() => Response.json({ private: true }, { status: 500 }), 502, 'booking_unavailable'],
+    [() => Response.json({ booking: null }), 502, 'booking_unavailable'],
+    [() => { throw new Error('connection reset'); }, 503, 'temporarily_unavailable'],
+  ]) {
+    let calls = 0;
+    const tasks = [];
+    const result = await handleVistoDemo({
+      request: demoRequest('POST', demoFields), env: vistoEnv, waitUntil: (promise) => tasks.push(promise),
+    }, async () => ++calls === 1 ? demoChallenge() : upstream());
+    assert.equal(result.status, status);
+    assert.deepEqual(await result.json(), { ok: false, code });
+    assert.equal(tasks.length, 0);
+    assert.equal(calls, 2);
   }
 });
