@@ -56,6 +56,24 @@ for (const path of pagePaths) {
     const post = structured['@graph'].find((item) => item['@type'] === 'BlogPosting');
     assert.ok(post?.headline && post?.author?.name && post?.datePublished, `Artigo: ${path}`);
     assert.ok(page.includes(post.headline), `Título do artigo visível: ${path}`);
+    const webpage = structured['@graph'].find((item) => hasType(item, 'WebPage'));
+    const publisher = structured['@graph'].find((item) => hasType(item, 'Organization'));
+    assert.equal(post.url, expected.url);
+    assert.equal(post.mainEntityOfPage['@id'], webpage['@id']);
+    assert.equal(webpage.mainEntity['@id'], post['@id']);
+    assert.equal(post.publisher['@id'], publisher['@id']);
+    assert.equal(post.author['@id'], publisher['@id']);
+    assert.ok(page.toLowerCase().includes(`datetime="${post.datePublished}"`), `Data visível: ${path}`);
+    if (post.image) {
+      assert.equal(post.image['@type'], 'ImageObject');
+      const src = new URL(post.image.url);
+      assert.equal(src.origin, new URL(expected.url).origin);
+      assert.ok(page.includes(`src="${src.pathname}"`), `Capa visível: ${path}`);
+      assert.ok(post.image.width > 0 && post.image.height > 0);
+    }
+    if (post.articleSection === 'Visto') {
+      assert.equal(post.about['@id'], 'https://visto.hawksbi.com.br/#software');
+    }
   }
   for (const match of page.matchAll(/(?:src|poster)="(\/[^"#]+)"/g)) await access(new URL(match[1].slice(1), dist));
 }

@@ -1,4 +1,5 @@
 import { vistoCharacters } from "./vistoCharacters";
+import { vistoNovemberUpdates } from "./vistoNovemberUpdates";
 import { agendoWhatsAppLaunch } from "./agendoWhatsAppLaunch";
 
 export const products = [
@@ -73,6 +74,7 @@ export type Article = {
   cta?: { title: string; text: string; label: string; href: string };
 };
 const editorialArticles: Article[] = [
+  vistoNovemberUpdates,
   vistoCharacters,
   agendoWhatsAppLaunch,
   {

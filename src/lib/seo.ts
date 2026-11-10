@@ -31,13 +31,14 @@ const organization = {
   },
 };
 const website = { '@type': 'WebSite', '@id': websiteId, name: 'Hawks BI', url: `${origin}/`, inLanguage: 'pt-BR', publisher: { '@id': organizationId } };
+const vistoSoftwareId = "https://visto.hawksbi.com.br/#software";
 const serviceEntity = (service: (typeof services)[number]) => ({
   '@type': 'Service', '@id': `${origin}${servicePath(service.slug)}#service`,
   name: service.name, description: service.description, serviceType: service.name,
   url: `${origin}${servicePath(service.slug)}`, provider: { '@id': organizationId }, areaServed: area,
 });
 const softwareEntity = (product: (typeof products)[number]) => ({
-  '@type': 'WebApplication', '@id': `${origin}${productPath(product.id)}#software`,
+  '@type': 'WebApplication', '@id': product.id === "visto" ? vistoSoftwareId : `${origin}${productPath(product.id)}#software`,
   name: product.name, description: product.description, url: product.href,
   image: `${origin}${product.logo}`, applicationCategory: 'BusinessApplication',
   applicationSubCategory: product.category, inLanguage: 'pt-BR',
@@ -104,8 +105,32 @@ export function getPageMeta(path: string) {
     });
   }
   if (article) {
-    page.mainEntity = { '@id': `${url}#article` };
-    graph.push({ '@type': 'BlogPosting', '@id': `${url}#article`, headline: article.title, description, ...(article.image ? {image: `${origin}${article.image.src}`} : {}), datePublished: article.date, dateModified: article.date, author: { '@type': 'Organization', name: 'Hawks BI', url: `${origin}/` }, publisher: { '@id': organizationId }, mainEntityOfPage: { '@id': `${url}#webpage` }, inLanguage: 'pt-BR', articleSection: products.find((item) => item.id === article.product)!.name });
+    const articleId = `${url}#article`;
+    page.mainEntity = { '@id': articleId };
+    graph.push({
+      '@type': 'BlogPosting',
+      '@id': articleId,
+      url,
+      headline: article.title,
+      description,
+      ...(article.image ? {
+        image: {
+          '@type': 'ImageObject',
+          url: `${origin}${article.image.src}`,
+          width: article.image.width,
+          height: article.image.height,
+        },
+      } : {}),
+      datePublished: article.date,
+      author: { '@type': 'Organization', '@id': organizationId, name: 'Hawks BI', url: `${origin}/` },
+      publisher: { '@id': organizationId },
+      mainEntityOfPage: { '@id': `${url}#webpage` },
+      inLanguage: 'pt-BR',
+      articleSection: products.find((item) => item.id === article.product)!.name,
+      ...(article.product === 'visto' ? {
+        about: { '@type': 'WebApplication', '@id': vistoSoftwareId, name: 'Visto', url: 'https://visto.hawksbi.com.br/' },
+      } : {}),
+    });
   }
   return { title, description, url, exists, type: article ? 'article' : 'website', graph: { '@context': 'https://schema.org', '@graph': graph } };
 }

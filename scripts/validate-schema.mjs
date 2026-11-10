@@ -68,7 +68,7 @@ export function validateSchema(html, path) {
     const software = graph.filter((entity) => hasType(entity, 'WebApplication'));
     assert.equal(software.length, 1, `Um software por página de produto: ${path}`);
     const app = software[0];
-    assert.equal(app['@id'], `${url}#software`);
+    assert.equal(app['@id'], product.id === 'visto' ? 'https://visto.hawksbi.com.br/#software' : `${url}#software`);
     assert.equal(app.name, product.name);
     assert.equal(app.url, `https://${product.id}.hawksbi.com.br/`);
     assert.equal(app.applicationCategory, 'BusinessApplication');
