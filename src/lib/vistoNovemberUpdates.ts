@@ -32,6 +32,13 @@ export const vistoNovemberUpdates: Article = {
       ],
     },
     {
+      title: "Configure rotinas a cada 14 ou 15 dias, ou mensalmente",
+      paragraphs: [
+        "Na aba Agenda da rotina, escolha “A cada duas semanas” para repetir a cada 14 dias, “A cada 15 dias” para um intervalo de 15 dias ou “Mensal” para uma rotina que acontece todo mês.",
+        "Essas opções ajudam a programar conferências e revisões que não precisam entrar na fila todo dia.",
+      ],
+    },
+    {
       title: "Confira atenção e temperaturas em períodos maiores",
       paragraphs: [
         "Corrigimos a análise do Painel que podia parar de carregar em recortes de 15 e 30 dias. Esses períodos ajudam a revisar as ocorrências com atenção e os registros de temperatura sem dividir o mês em várias consultas.",
