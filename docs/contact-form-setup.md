@@ -16,3 +16,9 @@ Recipient is fixed server-side to `comercial@hawksbi.com.br`. The visitor's emai
 Run `npm run check:contact`, `npm run build`, `npm run check:seo` and a Cloudflare Pages Functions build before deployment. After configuring the service, send one clearly labeled test through the real modal to the commercial mailbox, confirm provider delivery and receipt, and check mobile/desktop success states. The automated tests use an injected fake transport; they are not evidence of mailbox delivery.
 
 Current configuration (2026-10-09): Resend selected and authorized by the owner. The key has Sending access restricted to `contato.hawksbi.com.br`. All four production variables are stored in Cloudflare Pages project `hawks-bi`; the API key and Turnstile secret are not in source control. The managed Turnstile widget allows `hawksbi.com.br`. Tracking and receiving through Resend are disabled. Deployment and real form delivery must be confirmed separately; successful automated tests do not demonstrate inbox receipt.
+
+## Visto demonstration requests
+
+`/api/visto-demo` uses the same four bindings and the same commercial recipient. CORS permits only `https://visto.hawksbi.com.br`. The widget must return the Visto hostname and action `visto-demo`. The email contains the visitor's name, email and Brazilian WhatsApp number, with the subject “Visto | Pedido de demonstração”. Its idempotency namespace is separate from the institutional form.
+
+Deploy the Hawks Pages route first and check GET and OPTIONS with the Visto origin. Confirm an authorized test submission before activating the landing's buttons. If reverting both sites, revert the landing first so its buttons can still reach a working destination.
